@@ -8,7 +8,7 @@ HTML = """
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Flappy Eagle - Hard Mode</title>
+  <title>Flappy UFO Rocket</title>
   <style>
     body { margin:0; display:flex; justify-content:center; align-items:center; height:100vh; background:#70c5ce; }
     canvas { background:#70c5ce; display:block; border:2px solid #000; }
@@ -99,17 +99,27 @@ HTML = """
       }
     };
 
-    // Spikes (bay ngang)
-    const spikes = {
+    // UFOs (bay ngang)
+    const ufos = {
       items: [],
       draw(){
-        ctx.fillStyle = "red";
-        this.items.forEach(s => {
+        this.items.forEach(u => {
+          // Thân UFO
+          ctx.fillStyle = "#888";
           ctx.beginPath();
-          ctx.moveTo(s.x, s.y);
-          ctx.lineTo(s.x+20, s.y+20);
-          ctx.lineTo(s.x-20, s.y+20);
-          ctx.closePath();
+          ctx.ellipse(u.x, u.y, 30, 12, 0, 0, 2*Math.PI);
+          ctx.fill();
+          // Vòm kính
+          ctx.fillStyle = "#00f";
+          ctx.beginPath();
+          ctx.arc(u.x, u.y-8, 10, 0, 2*Math.PI);
+          ctx.fill();
+          // Đèn vàng
+          ctx.fillStyle = "yellow";
+          ctx.beginPath();
+          ctx.arc(u.x-15, u.y+5, 3, 0, 2*Math.PI);
+          ctx.arc(u.x, u.y+5, 3, 0, 2*Math.PI);
+          ctx.arc(u.x+15, u.y+5, 3, 0, 2*Math.PI);
           ctx.fill();
         });
       },
@@ -117,9 +127,9 @@ HTML = """
         if(frames % 150 === 0 && !gameOver){
           this.items.push({ x: canvas.width, y: 100 + Math.random()*(canvas.height-200), dx:3 });
         }
-        this.items.forEach(s => {
-          s.x -= s.dx;
-          if(bird.x < s.x+20 && bird.x > s.x-20 && bird.y > s.y && bird.y < s.y+20){
+        this.items.forEach(u => {
+          u.x -= u.dx;
+          if(Math.abs(bird.x - u.x) < 25 && Math.abs(bird.y - u.y) < 20){
             gameOver = true;
           }
         });
@@ -127,24 +137,39 @@ HTML = """
       }
     };
 
-    // Enemy birds
-    const enemies = {
+    // Rockets (tên lửa)
+    const rockets = {
       items: [],
       draw(){
-        ctx.fillStyle = "black";
-        this.items.forEach(e => {
+        this.items.forEach(r => {
+          // Thân tên lửa
+          ctx.fillStyle = "gray";
+          ctx.fillRect(r.x-10, r.y-5, 30, 10);
+          // Đầu đỏ
+          ctx.fillStyle = "red";
           ctx.beginPath();
-          ctx.arc(e.x, e.y, 15, 0, 2*Math.PI);
+          ctx.moveTo(r.x+20, r.y-7);
+          ctx.lineTo(r.x+30, r.y);
+          ctx.lineTo(r.x+20, r.y+7);
+          ctx.closePath();
+          ctx.fill();
+          // Lửa đuôi
+          ctx.fillStyle = "orange";
+          ctx.beginPath();
+          ctx.moveTo(r.x-10, r.y-5);
+          ctx.lineTo(r.x-20, r.y);
+          ctx.lineTo(r.x-10, r.y+5);
+          ctx.closePath();
           ctx.fill();
         });
       },
       update(){
         if(frames % 200 === 0 && !gameOver){
-          this.items.push({ x: canvas.width, y: 100 + Math.random()*(canvas.height-200), dx:4 });
+          this.items.push({ x: canvas.width, y: 100 + Math.random()*(canvas.height-200), dx:5 });
         }
-        this.items.forEach(e => {
-          e.x -= e.dx;
-          if(Math.abs(bird.x - e.x) < 20 && Math.abs(bird.y - e.y) < 20){
+        this.items.forEach(r => {
+          r.x -= r.dx;
+          if(Math.abs(bird.x - r.x) < 20 && Math.abs(bird.y - r.y) < 20){
             gameOver = true;
           }
         });
@@ -171,8 +196,8 @@ HTML = """
       frames = 0; score = 0; gameOver = false;
       bird.y = 200; bird.speed = 0;
       pipes.position = [];
-      spikes.items = [];
-      enemies.items = [];
+      ufos.items = [];
+      rockets.items = [];
       playBtn.style.display = "none";
     }
 
@@ -180,8 +205,8 @@ HTML = """
       ctx.fillStyle = "#70c5ce";
       ctx.fillRect(0,0,canvas.width,canvas.height);
       pipes.draw();
-      spikes.draw();
-      enemies.draw();
+      ufos.draw();
+      rockets.draw();
       bird.draw();
       drawScore();
       if(gameOver) drawGameOver();
@@ -191,8 +216,8 @@ HTML = """
       if(!gameOver){
         bird.update();
         pipes.update();
-        spikes.update();
-        enemies.update();
+        ufos.update();
+        rockets.update();
       }
     }
 
