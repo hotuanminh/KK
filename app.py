@@ -8,25 +8,40 @@ HTML = """
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Flappy Eagle - Railway</title>
+  <title>Flappy Eagle - Hard Mode</title>
   <style>
     body { margin:0; display:flex; justify-content:center; align-items:center; height:100vh; background:#70c5ce; }
     canvas { background:#70c5ce; display:block; border:2px solid #000; }
+    #playAgain {
+      display:none;
+      position:absolute;
+      top:60%;
+      left:50%;
+      transform:translate(-50%,-50%);
+      padding:10px 20px;
+      font-size:20px;
+      font-weight:bold;
+      background:#ff4444;
+      color:white;
+      border:none;
+      border-radius:8px;
+      cursor:pointer;
+    }
   </style>
 </head>
 <body>
-  <canvas id="gameCanvas" width="400" height="600"></canvas>
+  <canvas id="gameCanvas" width="500" height="700"></canvas>
+  <button id="playAgain">Play Again</button>
   <script>
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
+    const playBtn = document.getElementById("playAgain");
 
-    let frames = 0;
-    let score = 0;
-    let gameOver = false;
+    let frames, score, gameOver;
 
     // Bird (Eagle)
     const bird = {
-      x: 50, y: 150, w: 40, h: 40,
+      x: 80, y: 200, w: 40, h: 40,
       gravity: 0.25, jump: 4.6, speed: 0,
       draw(){
         ctx.fillStyle = "brown";
@@ -49,14 +64,14 @@ HTML = """
       update(){
         this.speed += this.gravity;
         this.y += this.speed;
-        if(this.y + this.h/2 >= canvas.height){ gameOver = true; }
+        if(this.y + this.h/2 >= canvas.height || this.y - this.h/2 <= 0){ gameOver = true; }
       }
     };
 
     // Pipes
     const pipes = {
       position: [],
-      w: 60, h: 400, gap: 130,
+      w: 60, h: 400, gap: 140,
       dx: 2,
       draw(){
         ctx.fillStyle = "#228B22";
@@ -67,7 +82,7 @@ HTML = """
       },
       update(){
         if(frames % 100 === 0 && !gameOver){
-          this.position.push({ x: canvas.width, y: -this.h + Math.random()*150, passed: false });
+          this.position.push({ x: canvas.width, y: -this.h + Math.random()*200, passed:false });
         }
         this.position.forEach(p => {
           p.x -= this.dx;
@@ -80,14 +95,62 @@ HTML = """
             p.passed = true;
           }
         });
-        if(this.position.length && this.position[0].x < -this.w){
-          this.position.shift();
-        }
+        if(this.position.length && this.position[0].x < -this.w){ this.position.shift(); }
       }
     };
 
-    document.addEventListener("keydown", e => { if(e.code === "Space" && !gameOver) bird.flap(); });
-    document.addEventListener("click", () => { if(!gameOver) bird.flap(); });
+    // Spikes (bay ngang)
+    const spikes = {
+      items: [],
+      draw(){
+        ctx.fillStyle = "red";
+        this.items.forEach(s => {
+          ctx.beginPath();
+          ctx.moveTo(s.x, s.y);
+          ctx.lineTo(s.x+20, s.y+20);
+          ctx.lineTo(s.x-20, s.y+20);
+          ctx.closePath();
+          ctx.fill();
+        });
+      },
+      update(){
+        if(frames % 150 === 0 && !gameOver){
+          this.items.push({ x: canvas.width, y: 100 + Math.random()*(canvas.height-200), dx:3 });
+        }
+        this.items.forEach(s => {
+          s.x -= s.dx;
+          if(bird.x < s.x+20 && bird.x > s.x-20 && bird.y > s.y && bird.y < s.y+20){
+            gameOver = true;
+          }
+        });
+        if(this.items.length && this.items[0].x < -50){ this.items.shift(); }
+      }
+    };
+
+    // Enemy birds
+    const enemies = {
+      items: [],
+      draw(){
+        ctx.fillStyle = "black";
+        this.items.forEach(e => {
+          ctx.beginPath();
+          ctx.arc(e.x, e.y, 15, 0, 2*Math.PI);
+          ctx.fill();
+        });
+      },
+      update(){
+        if(frames % 200 === 0 && !gameOver){
+          this.items.push({ x: canvas.width, y: 100 + Math.random()*(canvas.height-200), dx:4 });
+        }
+        this.items.forEach(e => {
+          e.x -= e.dx;
+          if(Math.abs(bird.x - e.x) < 20 && Math.abs(bird.y - e.y) < 20){
+            gameOver = true;
+          }
+        });
+        if(this.items.length && this.items[0].x < -50){ this.items.shift(); }
+      }
+    };
 
     function drawScore(){
       ctx.fillStyle = "#fff";
@@ -98,15 +161,27 @@ HTML = """
     function drawGameOver(){
       ctx.fillStyle = "red";
       ctx.font = "50px Arial";
-      ctx.fillText("GAME OVER", 60, canvas.height/2);
+      ctx.fillText("GAME OVER", 100, canvas.height/2 - 40);
       ctx.font = "25px Arial";
-      ctx.fillText("Final Score: " + score, 120, canvas.height/2 + 40);
+      ctx.fillText("Final Score: " + score, 180, canvas.height/2);
+      playBtn.style.display = "block";
+    }
+
+    function resetGame(){
+      frames = 0; score = 0; gameOver = false;
+      bird.y = 200; bird.speed = 0;
+      pipes.position = [];
+      spikes.items = [];
+      enemies.items = [];
+      playBtn.style.display = "none";
     }
 
     function draw(){
       ctx.fillStyle = "#70c5ce";
       ctx.fillRect(0,0,canvas.width,canvas.height);
       pipes.draw();
+      spikes.draw();
+      enemies.draw();
       bird.draw();
       drawScore();
       if(gameOver) drawGameOver();
@@ -116,6 +191,8 @@ HTML = """
       if(!gameOver){
         bird.update();
         pipes.update();
+        spikes.update();
+        enemies.update();
       }
     }
 
@@ -125,6 +202,11 @@ HTML = """
       frames++;
       requestAnimationFrame(loop);
     }
+
+    canvas.addEventListener("click", () => { if(!gameOver) bird.flap(); });
+    playBtn.addEventListener("click", resetGame);
+
+    resetGame();
     loop();
   </script>
 </body>
