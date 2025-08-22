@@ -203,7 +203,12 @@ HTML = """
       requestAnimationFrame(loop);
     }
 
+    // Điều khiển bằng click chuột hoặc phím Space
     canvas.addEventListener("click", () => { if(!gameOver) bird.flap(); });
+    document.addEventListener("keydown", e => {
+      if(e.code === "Space" && !gameOver){ bird.flap(); }
+    });
+
     playBtn.addEventListener("click", resetGame);
 
     resetGame();
